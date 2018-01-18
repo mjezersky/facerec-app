@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane id="AnchorPane" prefHeight="621.0" prefWidth="1171.0" styleClass="rootPane" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="facerec.Controller">
+    <children>
+        <Button fx:id="processButton" disable="true" layoutX="17.0" layoutY="60.0" onAction="#switchProcessing" text="Start Processing" />
+      <Button fx:id="button1" layoutX="17.0" layoutY="27.0" onAction="#selectSource" text="Select Source" />
+      <TextField id="ipAddrIn" fx:id="ipAddrIn" layoutX="934.0" layoutY="205.0" prefHeight="26.0" prefWidth="123.0" promptText="IP Address" />
+      <TextField id="portIn" fx:id="portIn" layoutX="1059.0" layoutY="205.0" prefHeight="26.0" prefWidth="46.0" promptText="Port" />
+      <TextArea id="statusText" fx:id="statusText" editable="false" layoutX="14.0" layoutY="460.0" prefHeight="146.0" prefWidth="529.0" />
+      <Label id="imageStatus" fx:id="imageStatus" layoutX="937.0" layoutY="17.0" prefHeight="18.0" prefWidth="200.0" text="Worker pool" />
+      <Button layoutX="934.0" layoutY="243.0" mnemonicParsing="false" onAction="#addWorker" text="New" />
+      <ImageView fx:id="processedImage" fitHeight="411.0" fitWidth="704.0" layoutX="189.0" layoutY="26.0" pickOnBounds="true" preserveRatio="true" styleClass="mainImage" />
+      <ListView fx:id="workerView" layoutX="934.0" layoutY="40.0" onMouseClicked="#updateSel" prefHeight="162.0" prefWidth="216.0" />
+      <TextArea fx:id="responseText" editable="false" layoutX="586.0" layoutY="460.0" prefHeight="146.0" prefWidth="544.0" />
+      <Label id="imageStatus" fx:id="imageStatus1" layoutX="586.0" layoutY="437.0" prefHeight="18.0" prefWidth="200.0" text="Response" />
+      <Label id="imageStatus" fx:id="imageStatus11" layoutX="14.0" layoutY="437.0" prefHeight="18.0" prefWidth="200.0" text="Info" />
+      <Button layoutX="1108.0" layoutY="205.0" mnemonicParsing="false" onAction="#editWorker" text="Save" />
+      <Button disable="true" layoutX="984.0" layoutY="243.0" mnemonicParsing="false" text="Delete" />
+      <TextField fx:id="trainLabel" layoutX="19.0" layoutY="172.0" onKeyReleased="#updateLabel" prefHeight="26.0" prefWidth="123.0" />
+      <Label layoutX="20.0" layoutY="153.0" text="Train label:" />
+      <Button layoutX="21.0" layoutY="212.0" mnemonicParsing="false" onAction="#wipeDB" text="Wipe DB" />
+      <Button layoutX="21.0" layoutY="285.0" mnemonicParsing="false" onAction="#retrainClassifier" text="Retrain Classifier" />
+      <CheckBox layoutX="21.0" layoutY="96.0" mnemonicParsing="false" onAction="#displaySwitch" selected="true" text="Display frames" />
+      <CheckBox layoutX="21.0" layoutY="122.0" mnemonicParsing="false" onAction="#trainSwitch" text="Training mode" />
+      <Button layoutX="21.0" layoutY="249.0" mnemonicParsing="false" onAction="#dumpDB" text="Dump DB" />
+      <Button layoutX="985.0" layoutY="390.0" mnemonicParsing="false" onAction="#selectWebcam" text="Webcam (debug)" />
+    </children>
+    <stylesheets>
+        <URL value="@style.css" />
+    </stylesheets>
+    
+</AnchorPane>

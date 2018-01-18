@@ -1,0 +1,13 @@
+.rootPane {
+    -fx-background-color: #fbfbfb;
+}
+
+.mainImage {
+    -fx-border-style: solid;
+    -fx-border-width: 2;
+    -fx-border-color: #000;
+}
+
+.button {
+    -fx-font-weight: bold;
+}
