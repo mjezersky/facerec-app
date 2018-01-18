@@ -20,6 +20,7 @@ public class Link {
     private PrintWriter out;
     private String currentLabel = "";
     boolean trainingMode = false;
+        
     
     public void setTrainingMode(boolean mode) { this.trainingMode = mode; }
     
@@ -99,6 +100,7 @@ public class Link {
         communicate("DUMPDB".getBytes());
         return recvData();
     }
+    
     
     public String communicate(byte[] msg) {
         send(msg);

@@ -13,6 +13,7 @@ import javafx.embed.swing.SwingNode;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Button;
@@ -27,9 +28,13 @@ import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
+import javafx.scene.paint.Paint;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Transform;
 import javafx.stage.FileChooser;
@@ -51,10 +56,13 @@ public class Controller implements Initializable {
     @FXML private SwingNode swingNode;
     @FXML private Button processButton;
     @FXML private ListView workerView;
+    @FXML private Pane imgContainer;
     
+    private Rectangle displayRect = null;    
     private VideoController vc = null;
     private MediaPlayer player;
     boolean processing = false;
+    boolean displayRectangles = true;
     private MediaView hiddenVideo;
     private WorkerPool workerPool;
     
@@ -134,9 +142,36 @@ public class Controller implements Initializable {
         vc.setTrainingMode( ((CheckBox) event.getSource()).isSelected() );
     }
     
+    @FXML
+    private void rectSwitch(ActionEvent event) {
+        displayRectangles = ( ((CheckBox) event.getSource()).isSelected() );
+    }
+    
     
     public void displayImage(Image img) {
         processedImage.setImage(img);
+    }
+    
+    public void displayImage(Image img, String responseData) {
+        processedImage.setImage(img);
+        
+        if (displayRect != null) {
+            imgContainer.getChildren().remove(displayRect);
+        }
+        if (!displayRectangles) { return; }
+        RectangleObject faceRect = RectangleObject.deserializeRect(responseData);
+        if (faceRect != null) {
+            
+            
+            // assuming the image is landscape-oriented, todo: add actual check for larger dim
+            double scaleFactor = imgContainer.getHeight()/img.getHeight();
+            faceRect.scale(scaleFactor);
+            
+            displayRect = new Rectangle(faceRect.left, faceRect.top, faceRect.right-faceRect.left, faceRect.bottom-faceRect.top);
+            displayRect.getStyleClass().add("face-rectangle");
+            imgContainer.getChildren().add(displayRect);
+
+        }
     }
     
     
@@ -202,6 +237,14 @@ public class Controller implements Initializable {
         vc.start();
     }
     
+    @FXML
+    private void forceCloseVC(ActionEvent event) {
+        
+        if (vc != null) {
+            vc.shutdown();
+            processButton.setText("Start Processing");
+        }
+    }
     
     @FXML
     public void displaySwitch(ActionEvent evt){
@@ -212,6 +255,7 @@ public class Controller implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         hiddenVideo = new MediaView();
         
+        StackPane.setAlignment(processedImage, Pos.TOP_LEFT);
         workerPool = new WorkerPool(workerView);
         workerPool.addWorker("localhost", 9000);
         

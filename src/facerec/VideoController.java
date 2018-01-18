@@ -48,6 +48,12 @@ public class VideoController {
         stopFlag = true;
     }
     
+    public void shutdown() {
+        stop();
+        active = false;
+        capture.release();
+    }
+    
     public void setSource(String filename) {
         capture.release();
         capture = new VideoCapture(filename);
@@ -117,7 +123,7 @@ public class VideoController {
                             @Override
                                 public void run() {
                                     if (displayFrames) {
-                                        guiController.displayImage(img);
+                                        guiController.displayImage(img, resp);
                                     }
                                     guiController.setResponseText(resp);
                                 }

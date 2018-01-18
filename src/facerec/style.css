@@ -11,3 +11,12 @@
 .button {
     -fx-font-weight: bold;
 }
+
+.face-rectangle {
+    -fx-fill: rgba(255,255,255,0.1);
+    -fx-stroke: #ff6666;
+    -fx-stroke-width: 3;
+    -fx-opacity: 0.8;
+    -fx-border-color: #ff6666;
+    -fx-border-width: 2;
+}
