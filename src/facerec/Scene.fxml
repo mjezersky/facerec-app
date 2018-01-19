@@ -20,9 +20,9 @@
       <TextArea id="statusText" fx:id="statusText" editable="false" layoutX="14.0" layoutY="460.0" prefHeight="146.0" prefWidth="529.0" />
       <Label id="imageStatus" fx:id="imageStatus" layoutX="937.0" layoutY="17.0" prefHeight="18.0" prefWidth="200.0" text="Worker pool" />
       <Button layoutX="934.0" layoutY="243.0" mnemonicParsing="false" onAction="#addWorker" text="New" />
-      <Pane fx:id="imgContainer" layoutX="165.0" layoutY="17.0" prefHeight="409.0" prefWidth="734.0">
+      <Pane fx:id="imgContainer" layoutX="181.0" layoutY="17.0" prefHeight="410.0" prefWidth="718.0">
          <children>
-            <ImageView fx:id="processedImage" fitHeight="410.0" fitWidth="734.0" pickOnBounds="true" preserveRatio="true" styleClass="mainImage" />
+            <ImageView fx:id="processedImage" fitHeight="410.0" fitWidth="718.0" pickOnBounds="true" preserveRatio="true" styleClass="mainImage" />
          </children>
       </Pane>
       <ListView fx:id="workerView" layoutX="934.0" layoutY="40.0" onMouseClicked="#updateSel" prefHeight="162.0" prefWidth="216.0" />
@@ -38,9 +38,12 @@
       <CheckBox layoutX="21.0" layoutY="96.0" mnemonicParsing="false" onAction="#displaySwitch" prefHeight="18.0" prefWidth="137.0" selected="true" text="Display frames" />
       <CheckBox layoutX="21.0" layoutY="147.0" mnemonicParsing="false" onAction="#trainSwitch" prefHeight="18.0" prefWidth="138.0" text="Training mode" />
       <Button layoutX="21.0" layoutY="272.0" mnemonicParsing="false" onAction="#dumpDB" text="Dump DB" />
-      <Button layoutX="952.0" layoutY="356.0" mnemonicParsing="false" onAction="#selectWebcam" text="Webcam (debug)" />
-      <Button layoutX="952.0" layoutY="392.0" mnemonicParsing="false" onAction="#forceCloseVC" text="Force close VC (debug)" />
+      <Button layoutX="952.0" layoutY="356.0" mnemonicParsing="false" onAction="#selectWebcam" text="Webcam" />
+      <Button layoutX="952.0" layoutY="392.0" mnemonicParsing="false" onAction="#forceCloseVC" text="Force close VC" />
       <CheckBox layoutX="21.0" layoutY="122.0" mnemonicParsing="false" onAction="#rectSwitch" prefHeight="18.0" prefWidth="154.0" selected="true" text="Display rectangles" />
+      <Button layoutX="1025.0" layoutY="320.0" mnemonicParsing="false" onAction="#frameSeek" text="Seek" />
+      <TextField id="portIn" fx:id="frameIn" layoutX="952.0" layoutY="320.0" prefHeight="26.0" prefWidth="66.0" promptText="ms" />
+      <Label id="imageStatus" fx:id="imageStatus2" layoutX="937.0" layoutY="296.0" prefHeight="18.0" prefWidth="200.0" text="Debug functions" />
     </children>
     <stylesheets>
         <URL value="@style.css" />

@@ -14,6 +14,8 @@ import javafx.scene.image.Image;
 import javax.imageio.ImageIO;
 import org.opencv.core.Mat;
 import org.opencv.videoio.VideoCapture;
+import static org.opencv.videoio.Videoio.CAP_PROP_POS_MSEC;
+import static org.opencv.videoio.Videoio.CV_CAP_PROP_FRAME_COUNT;
 import static org.opencv.videoio.Videoio.CV_CAP_PROP_POS_FRAMES;
 
 
@@ -52,6 +54,18 @@ public class VideoController {
         stop();
         active = false;
         capture.release();
+    }
+    
+    public void seekFrame(double frame) {
+        capture.set(CV_CAP_PROP_POS_FRAMES, frame);
+    }
+    
+    public void seek(double ms) {
+        capture.set(CAP_PROP_POS_MSEC, ms);
+    }
+    
+    public double getTotalFrames() {
+        return capture.get(CV_CAP_PROP_FRAME_COUNT);
     }
     
     public void setSource(String filename) {

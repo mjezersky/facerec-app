@@ -50,6 +50,7 @@ public class Controller implements Initializable {
     @FXML private Label imageStatus;
     @FXML private TextField ipAddrIn;
     @FXML private TextField portIn;
+    @FXML private TextField frameIn;
     @FXML private ImageView image;
     @FXML private MediaView video;
     @FXML private ImageView processedImage;
@@ -147,6 +148,12 @@ public class Controller implements Initializable {
         displayRectangles = ( ((CheckBox) event.getSource()).isSelected() );
     }
     
+    @FXML
+    private void frameSeek(ActionEvent event) {
+        double frame = Double.parseDouble(frameIn.getText());
+        vc.seek(frame);
+    }
+    
     
     public void displayImage(Image img) {
         processedImage.setImage(img);
@@ -211,12 +218,11 @@ public class Controller implements Initializable {
         
         if (infile == null) { return; }
         
-        String fname = infile.getAbsolutePath();
-        printStatus("Source set as \""+fname+"\"\n");
-        
+        String fname = infile.getAbsolutePath();        
         processButton.setDisable(false);
         
         vc.setSource(fname);
+        printStatus("Source set as \""+fname+"\", total frames: "+String.valueOf(vc.getTotalFrames())+"\n");
         vc.start();
     }
     
