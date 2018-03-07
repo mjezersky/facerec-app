@@ -44,6 +44,7 @@
       <Button layoutX="1025.0" layoutY="320.0" mnemonicParsing="false" onAction="#frameSeek" text="Seek" />
       <TextField id="portIn" fx:id="frameIn" layoutX="952.0" layoutY="320.0" prefHeight="26.0" prefWidth="66.0" promptText="ms" />
       <Label id="imageStatus" fx:id="imageStatus2" layoutX="937.0" layoutY="296.0" prefHeight="18.0" prefWidth="200.0" text="Debug functions" />
+      <Button layoutX="23.0" layoutY="356.0" mnemonicParsing="false" onAction="#testButton" text="TEST" />
     </children>
     <stylesheets>
         <URL value="@style.css" />

@@ -1,14 +1,11 @@
 
 package facerec;
 
-import java.io.StringWriter;
-
-
 public class RectangleObject {
-    public int left = 0;
-    public int top = 0;
-    public int right = 0;
-    public int bottom = 0;
+    public int left = 0;    // x1
+    public int top = 0;     // y1
+    public int right = 0;   // x2
+    public int bottom = 0;  // y2
 
 
     public void scale(double factor) {
@@ -17,62 +14,66 @@ public class RectangleObject {
         right *= factor;
         bottom *= factor;
     }
+    
+    public double ratio(RectangleObject r) {
+        double intersection = Math.max(0, Math.min(this.right, r.right) - Math.max(this.left, r.left)) * Math.max(0, Math.min(this.bottom, r.bottom) - Math.max(this.top, r.top));
+        double union = this.area() + r.area() - intersection;
+        
+        return intersection/union;
+    }
+    
+    public boolean similar(RectangleObject r, double threshold) {
+        return ratio(r) >= threshold;
+    }
+    
+    public double area() {
+        return (this.right-this.left)*(this.bottom-this.top);
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) { return false; }
+        if (o.getClass() != RectangleObject.class) { return false; }
+        RectangleObject r = (RectangleObject) o;
+        
+        return (this.top==r.top && this.right==r.right && this.bottom==r.bottom && this.left==r.left);
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 19 * hash + this.left;
+        hash = 19 * hash + this.top;
+        hash = 19 * hash + this.right;
+        hash = 19 * hash + this.bottom;
+        return hash;
+    }
 
     public static RectangleObject deserializeRect(String msgString) {
-        // Deserialization FSM
-        
-        if (!msgString.contains("$")) {
+        RectangleObject rect = new RectangleObject();
+
+        if (msgString == null) {
+            System.err.println("RectangleObject.deserializeRect - Error: deserializing null string.");
             return null;
         }
         
-        int state = 0;
-        RectangleObject rect = new RectangleObject();
-        StringWriter sw = new StringWriter();
-        
-        boolean terminate = false;
-        for (int strInd = 1; strInd < msgString.length(); strInd++) {
-            char cc = msgString.charAt(strInd);
-            if (terminate) { break; }
-            if (cc == ' ') { continue; }
-            
-            switch (state) {
-                case 0:
-                    if (cc == ',') {
-                        rect.left = Integer.parseInt(sw.toString());
-                        sw = new StringWriter();
-                        state = 1;
-                        break;
-                    }
-                    sw.append(cc);
-                    break;
-                case 1:
-                    if (cc == ',') {
-                        rect.top = Integer.parseInt(sw.toString());
-                        sw = new StringWriter();
-                        state = 2;
-                        break;
-                    }
-                    sw.append(cc);
-                    break;
-                case 2:
-                    if (cc == ',') {
-                        rect.right = Integer.parseInt(sw.toString());
-                        sw = new StringWriter();
-                        state = 3;
-                        break;
-                    }
-                    sw.append(cc);
-                    break;
-                case 3:
-                    if (cc == ']') {
-                        rect.bottom = Integer.parseInt(sw.toString());
-                        terminate = true;
-                        break;
-                    }
-                    sw.append(cc);
-                    break;
-            }
+        String[] strData = msgString.split("#");
+        if (strData.length != 4) {
+            System.err.println("RectangleObject.deserializeRect - Error: bad string for deserialization.");
+            return null;
         }
+        
+        try {
+            rect.left = Integer.parseInt(strData[0]);
+            rect.top = Integer.parseInt(strData[1]);
+            rect.right = Integer.parseInt(strData[2]);
+            rect.bottom = Integer.parseInt(strData[3]);
+        }
+        catch (NumberFormatException ex) {
+            System.err.println("RectangleObject.deserializeRect - Error: bad number.");
+            return null;
+        }
+        
         return rect;
     }
 }

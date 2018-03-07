@@ -4,13 +4,9 @@ package facerec;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.TimeoutException;
 import javafx.application.Platform;
-import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.image.Image;
 import javax.imageio.ImageIO;
 import org.opencv.core.Mat;
 import org.opencv.videoio.VideoCapture;
@@ -24,10 +20,22 @@ public class VideoController {
     private VideoCapture capture;
     private Controller guiController;
     private Link link;
+    private MQLink mqlink;
     private boolean stopFlag = false;
     private boolean displayFrames = true;
     
     private int frameDelay = 35;
+    
+    public VideoController() {
+        this.capture = new VideoCapture();
+        this.active = false;
+    }
+    
+    public VideoController(MQLink mqlink) {
+        this.capture = new VideoCapture();
+        this.active = false;
+        this.mqlink = mqlink;
+    }
     
     public VideoController(Controller guiController) {
         this.capture = new VideoCapture();
@@ -35,6 +43,16 @@ public class VideoController {
         this.guiController = guiController;
         
         this.link = new Link();
+        
+        // debug
+        MQLink.makeLink();
+        this.mqlink = MQLink.getLink();
+        try {
+            this.mqlink.connect("localhost");
+            this.mqlink.declareQueue("default");
+        } catch (IOException | TimeoutException ex) {
+            System.err.println("MQlink error - cannot connect");
+        }
         // debug
         link.connect(guiController.getWorkerPool().getDefault().ip, guiController.getWorkerPool().getDefault().port);
     }
@@ -58,6 +76,10 @@ public class VideoController {
     
     public void seekFrame(double frame) {
         capture.set(CV_CAP_PROP_POS_FRAMES, frame);
+    }
+    
+    public double currFrame() {
+        return capture.get(CV_CAP_PROP_POS_FRAMES);
     }
     
     public void seek(double ms) {
@@ -120,16 +142,37 @@ public class VideoController {
     
     public void setTrainingMode(boolean mode) { link.setTrainingMode(mode); }
     
-    public void processFrame() {
+    public void processFrame(String messageQueueName) {
         Mat frame = grabFrame();
         
         if (!frame.empty()) {
             BufferedImage bimg = matToBufferedImage(frame);
             
-            String resp = link.processRequest(imageToByteArray(bimg));
+            //String resp = link.processRequest(imageToByteArray(bimg));
+            System.out.print("CURR FRAME: ");
+            System.out.println();
             
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+            try {
+                String header = Integer.toString((int)currFrame());
+                header += ",";
+                outputStream.write( header.getBytes() );
+                outputStream.write( imageToByteArray(bimg) );
+                outputStream.flush();
+            }
+            catch (IOException ex) {
+                ex.printStackTrace();
+            }
             
+            byte request[] = outputStream.toByteArray( );
             
+            try {
+                mqlink.publish(messageQueueName, request);
+            } catch (IOException ex) {
+                System.out.println("Send failed");
+            }
+            
+            /*
             Image img = SwingFXUtils.toFXImage(bimg, null);
             
             
@@ -141,7 +184,7 @@ public class VideoController {
                                     }
                                     guiController.setResponseText(resp);
                                 }
-                        });
+                        });*/
             
         }
         
@@ -173,32 +216,5 @@ public class VideoController {
 	return image;
 }
     
-    public void start() {
-        // separate non-FX thread
-        Thread t = new Thread() {
-
-            // runnable for that thread
-            @Override
-            public void run() {
-                for (;;) {
-                    if (stopFlag) {
-                        stopFlag = true;
-                        break;
-                    }
-                    
-                    if (!active) {
-                        try {Thread.sleep(50);}
-                        catch (InterruptedException ex) { }
-                    }
-                    
-                    if (active) {
-                        processFrame();
-                    }
-                    //active = false;
-                }
-            }
-        };
-        t.setDaemon(true);
-        t.start();
-    }
+   
 }

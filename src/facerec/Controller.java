@@ -5,24 +5,19 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javafx.application.Platform;
+import java.util.concurrent.TimeoutException;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.embed.swing.SwingNode;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
-import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -30,18 +25,11 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
-import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.transform.Scale;
-import javafx.scene.transform.Transform;
 import javafx.stage.FileChooser;
 import javax.imageio.ImageIO;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
 
 public class Controller implements Initializable {
     
@@ -66,6 +54,8 @@ public class Controller implements Initializable {
     boolean displayRectangles = true;
     private MediaView hiddenVideo;
     private WorkerPool workerPool;
+    private Dispatcher dispatcher;
+    private MQLink mqlink;
     
     @FXML
     private void addWorker(ActionEvent event) {
@@ -154,6 +144,27 @@ public class Controller implements Initializable {
         vc.seek(frame);
     }
     
+    @FXML
+    private void testButton(ActionEvent event) {
+        workerPool.clear();
+        try {
+            mqlink.connect("localhost");
+            mqlink.declareExchange("broadcast");
+            mqlink.declareQueue("feedback");
+            
+            mqlink.declareQueue("default");
+            mqlink.publish("default", "test");
+            
+            mqlink.registerDispatcher(dispatcher);
+            mqlink.broadcast("broadcast", "DISCOVER");
+        }
+        catch (IOException | TimeoutException ex) {
+            ex.printStackTrace();
+        }
+    
+    }
+        
+        
     
     public void displayImage(Image img) {
         processedImage.setImage(img);
@@ -223,7 +234,9 @@ public class Controller implements Initializable {
         
         vc.setSource(fname);
         printStatus("Source set as \""+fname+"\", total frames: "+String.valueOf(vc.getTotalFrames())+"\n");
-        vc.start();
+        
+        dispatcher.distributeWork(fname);
+        //vc.start();
     }
     
     @FXML
@@ -240,7 +253,7 @@ public class Controller implements Initializable {
         processButton.setDisable(false);
         
         vc.setSource(0);
-        vc.start();
+        //vc.start();
     }
     
     @FXML
@@ -263,7 +276,13 @@ public class Controller implements Initializable {
         
         StackPane.setAlignment(processedImage, Pos.TOP_LEFT);
         workerPool = new WorkerPool(workerView);
-        workerPool.addWorker("localhost", 9000);
+        //workerPool.addWorker("localhost", 9000);
         
-    }    
+        mqlink = new MQLink();
+        
+        dispatcher = new Dispatcher(workerPool, mqlink);
+        
+    }
+    
+    
 }

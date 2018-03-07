@@ -2,6 +2,7 @@
 package facerec;
 
 import java.util.ArrayList;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ListView;
@@ -9,12 +10,46 @@ import javafx.scene.control.ListView;
 
 public class WorkerPool {
     
-    ObservableList<Worker> pool;
-    ListView guiElement;
+    private ObservableList<Worker> pool;
+    private ListView guiElement;
     
     WorkerPool(ListView guiElement) {
         pool = FXCollections.observableArrayList();
         this.guiElement = guiElement;
+    }
+    
+    public ObservableList<Worker> getWorkers() { return pool; }
+    
+    
+    public Worker get(String workerName) {
+        Worker w;
+        for (int i=0; i<pool.size(); i++) {
+            w = pool.get(i);
+            if (w.getQueueName().equals(workerName)) {
+                return w;
+            }
+        }
+        return null;
+    }
+    
+    public void clear() {
+        pool.clear();
+        guiElement.setItems(pool);
+    }
+    
+    public void addWorkerNG(String name, VideoController vc) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                pool.add(new Worker(name, vc));
+                guiElement.setItems(pool);
+            }
+        });
+    }
+    
+    public void addWorker(String name, VideoController vc) {
+        pool.add(new Worker(name, vc));
+        guiElement.setItems(pool);
     }
     
     public void addWorker(String ip, int port) {
@@ -63,20 +98,5 @@ public class WorkerPool {
     
     public Worker getDefault() {
         return pool.get(0);
-    }
-
-    public class Worker {
-        public String ip;
-        public int port;
-        
-        Worker(String ip, int port) {
-            this.ip = ip;
-            this.port = port;
-        }
-        
-        @Override
-        public String toString() {
-            return ip+":"+String.valueOf(port);
-        }
     }
 }
