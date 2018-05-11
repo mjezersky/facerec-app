@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane id="AnchorPane" prefHeight="600.0" prefWidth="1100.0" styleClass="mainFxmlClass" stylesheets="@../style.css" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="facerec.videowindow.VideoWindowController">
+   <children>
+      <Label fx:id="progressLabel" layoutX="683.0" layoutY="510.0" text="0" />
+      <Canvas fx:id="frameBar" height="40.0" layoutX="20.0" layoutY="440.0" width="700.0" />
+      <Slider fx:id="videoSlider" layoutX="20.0" layoutY="485.0" onMouseDragged="#seekUpdate" onMouseReleased="#seekConfirm" opacity="0.61" prefHeight="20.0" prefWidth="700.0" />
+      <Pane fx:id="imgContainer" layoutX="20.0" layoutY="20.0" prefHeight="400.0" prefWidth="700.0">
+         <children>
+            <ImageView fx:id="imView" fitHeight="400.0" fitWidth="700.0" pickOnBounds="true" preserveRatio="true" styleClass="mainImage" />
+         </children>
+      </Pane>
+      <HBox layoutX="20.0" layoutY="519.0" prefHeight="51.0" prefWidth="594.0" spacing="10.0">
+         <children>
+            <Button mnemonicParsing="false" onAction="#prevFrame" prefHeight="35.0" prefWidth="120.0" text="Prev Frame" />
+            <Button mnemonicParsing="false" onAction="#nextFrame" prefHeight="35.0" prefWidth="120.0" text="Next Frame" />
+         </children>
+      </HBox>
+      <VBox layoutX="774.0" layoutY="48.0" prefHeight="375.0" prefWidth="151.0" spacing="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">
+         <children>
+            <ListView fx:id="flowList" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMousePressed="#selectFlows" prefHeight="375.0" prefWidth="298.0" />
+            <HBox prefHeight="51.0" prefWidth="448.0" spacing="10.0">
+               <children>
+                  <Label fx:id="recognizedLabel" text="Recognized: 0" />
+                  <Label fx:id="unknownLabel" text="Unknown: 0" />
+                  <Label fx:id="passesLabel" text="Total passes: 0" />
+               </children>
+            </HBox>
+            <HBox prefHeight="35.0" prefWidth="353.0" spacing="5.0">
+               <children>
+                  <Label prefHeight="35.0" prefWidth="65.0" text="Jump to:" />
+                  <Button maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#jumpToStart" prefHeight="35.0" prefWidth="60.0" text="Start" />
+                  <Button maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#jumpToBestFrame" prefHeight="35.0" prefWidth="100.0" text="Best Frame" />
+                  <Button maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#jumpToEnd" prefHeight="35.0" prefWidth="60.0" text="End" />
+               </children>
+            </HBox>
+            <TextField fx:id="searchField" prefHeight="26.0" prefWidth="200.0" promptText="Name">
+               <VBox.margin>
+                  <Insets top="20.0" />
+               </VBox.margin>
+            </TextField>
+            <Button maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#search" prefHeight="35.0" prefWidth="120.0" text="Find person" />
+            <Label fx:id="searchResultLabel" prefHeight="18.0" prefWidth="200.0" />
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

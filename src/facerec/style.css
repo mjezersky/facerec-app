@@ -1,5 +1,84 @@
+* {
+    -fx-maincolor: #6495ED;
+    -fx-lightcolor: #C0D4F7;
+    -fx-darkcolor: #4668A5;
+    -fx-errcolor: #ED6B6B;
+    -fx-okcolor: #84CE86;
+}
+
+.menu-bar {
+    -fx-background-color: #fff;
+    -fx-selection-bar: -fx-lightcolor;
+    -fx-cursor: hand;
+    /*-fx-border-style: solid;
+    -fx-border-width: 0px 0px 1px 0px;
+    -fx-border-color: -fx-lightcolor;*/
+}
+
+.menu-item {
+    -fx-cursor: hand;
+}
+
+.menu-bar:pressed {
+    -fx-background-color: #fff;
+    -fx-text-fill: #fff;
+    -fx-selection-bar: -fx-maincolor;
+    /*-fx-border-style: solid;
+    -fx-border-width: 0px 0px 1px 0px;
+    -fx-border-color: -fx-lightcolor;*/
+}
+
+.menu-bar .label:pressed {
+    -fx-selection-bar: #fff;
+}
+
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-opacity: 0.2;
+}
+
+.list-cell:filled:selected:focused, .list-cell:filled:selected {
+    -fx-background-color: -fx-maincolor;
+    -fx-text-fill: #fff;
+}
+
+.list-view:focused {
+    -fx-border-color: -fx-maincolor;
+}
+
+.list-view {
+    -fx-border-color: -fx-maincolor;
+}
+
+.tab-pane .tab
+{
+    -fx-background-color: -fx-lightcolor;
+    -fx-cursor: hand;
+}
+
+.tab .tab-label { 
+    -fx-text-fill: #fff;
+    -fx-font-weight: bold;
+}
+
+.tab-pane .tab:hover
+{
+    -fx-background-color: -fx-maincolor;
+}
+
+
+.tab-pane .tab:selected
+{
+    -fx-background-color: -fx-maincolor;
+    -fx-cursor: default;
+    
+}
+
 .rootPane {
-    -fx-background-color: #fbfbfb;
+    -fx-background-color: #fff;
+}
+
+.menubar {
+    -fx-background-color: #FFF;
 }
 
 .mainImage {
@@ -8,9 +87,94 @@
     -fx-border-color: #000;
 }
 
-.button {
-    -fx-font-weight: bold;
+.root {
+    -fx-background-color: #FFF;
 }
+
+.mainCanvas {
+    -fx-border-size: 1;
+    -fx-border-color: -fx-maincolor;
+    
+}
+
+.button {
+    -fx-background-color: -fx-maincolor;
+    -fx-background-radius: 0 0 0 0;
+    -fx-background-insets: 0 0 0 0;
+    -fx-text-fill: #FFF;
+    -fx-arc-height: 5;
+    -fx-border-width: 0;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-opacity: 0.8;
+}
+.button:pressed {
+    -fx-opacity: 0.8;
+    -fx-background-color: -fx-darkcolor;
+}
+
+.button:focused { 
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.slider .track {
+    -fx-background-color: -fx-lightcolor;
+    -fx-background-insets: 1 0 -1 0, 0, 1;
+    -fx-background-radius: 2.5, 2.5, 1.5;
+    -fx-padding: 0.209em;
+}
+
+.slider .thumb {
+    -fx-background-color: -fx-maincolor;
+}
+
+.check-box .box {
+    -fx-background-color: -fx-lightcolor;
+    -fx-border-color: #FFF;
+    -fx-background-insets: 0;
+    -fx-background-radius: 5 5 5 5;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: -fx-maincolor;
+    -fx-opacity: 1;
+}
+
+.check-box .text {
+    -fx-fill: -fx-darkcolor;
+}
+
+.label .text {
+    -fx-fill: -fx-darkcolor;
+}
+
+.label.header .text {
+    -fx-fill: -fx-maincolor;
+}
+
+.combo-box {
+    -fx-background-color: #FFF;
+    -fx-border-width: 1;
+    -fx-border-color: -fx-maincolor;
+}
+
+.operation-processing {
+    -fx-background-color: #ffcc66;
+}
+
+.operation-complete {
+    -fx-background-color: #99ff99;
+}
+
+.mainImage {
+    -fx-border-style: solid;
+    -fx-border-width: 2;
+    -fx-border-color: #000;
+}
+
 
 .face-rectangle {
     -fx-fill: rgba(255,255,255,0.1);

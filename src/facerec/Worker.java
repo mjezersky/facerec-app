@@ -14,9 +14,11 @@ public class Worker {
         
         private String queueName;
         private VideoController vc;
-        private int startFrame = 0;
-        private int currFrame = 0;
-        private int endFrame = 0;
+        private double startFrame = 0;
+        private double currFrame = 0;
+        private double endFrame = 0;
+        private Result lastResult = null;
+        private boolean finished = false;
         
         private FileWriter fileWriter = null;
         private Semaphore fwSem = new Semaphore(1);
@@ -37,6 +39,7 @@ public class Worker {
             this.startFrame = startFrame;
             this.endFrame = endFrame;
             this.currFrame = startFrame;
+            this.finished = false;
             
             System.out.print("Worker assigned frames ");
             System.out.print(startFrame);
@@ -53,28 +56,66 @@ public class Worker {
             catch (IOException ex) {
                 ex.printStackTrace();
             }
+            
         }
         
-        public void processNextFrame() {
+        public String getFileName() {
+            return this.queueName+".tmp";
+        }
+        
+        public void initVideoController(MQLink mqlink) {
+            vc = new VideoController(mqlink);
+        }
+        
+        public void processDBImage(String filename) {
+            vc.setSource(filename);
+            vc.processFrame(this.queueName, false, -1);
+            vc.close();
+        }
+        
+        public void processNextFrame(boolean skipSimilarFrames) {
+            Dispatcher.waitUntilEnabled();
+            int skippedFrame;
+            System.out.print("PNEXT! "); System.out.print(this.currFrame);
+            System.out.print(" "); System.out.println(this.endFrame);
             if (currFrame < endFrame) {
-                vc.processFrame(this.queueName);
+                currFrame = vc.currFrame();
+                skippedFrame = vc.processFrame(this.queueName, skipSimilarFrames);
+                while (skippedFrame == 1 ) {
+                    lastResult.frame = vc.currFrame();
+                    processResult(lastResult);
+                    skippedFrame = vc.processFrame(this.queueName, skipSimilarFrames);
+                }
+                
             }
             else {
                 System.out.println("Worker finished.");
-                closeFile();
+                this.finished = true;
             }
         }
         
+        public void processNextFrame() {
+            processNextFrame(true);
+        }
+        
         public void processResult(Result res) {
+            lastResult = res;
             System.out.println("Got result response:");
             System.out.println(res.toString());
             writeToFile(res.toString());
+            if (this.finished) {
+                closeFile();
+            }
         }
         
         public String getQueueName() { return queueName; }
         
         
         private void writeToFile(String data) {
+            if (data == null) {
+                System.err.println("Error: trying to write null data.");
+                return;
+            }
             try { fwSem.acquire(); }
             catch (InterruptedException ex) { return; }
             
@@ -98,6 +139,7 @@ public class Worker {
         }
         
         public void closeFile() {
+            if (fileWriter == null) return;
             try {
                 fileWriter.close();
             }

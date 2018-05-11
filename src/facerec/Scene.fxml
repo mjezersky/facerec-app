@@ -1,50 +1,97 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import java.net.URL?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextArea?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
 
-<AnchorPane id="AnchorPane" prefHeight="621.0" prefWidth="1171.0" styleClass="rootPane" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="facerec.Controller">
+<AnchorPane id="AnchorPane" prefHeight="450.0" prefWidth="1000.0" styleClass="rootPane" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="facerec.Controller">
     <children>
-        <Button fx:id="processButton" disable="true" layoutX="17.0" layoutY="60.0" onAction="#switchProcessing" text="Start Processing" />
-      <Button fx:id="button1" layoutX="17.0" layoutY="27.0" onAction="#selectSource" text="Select Source" />
-      <TextField id="ipAddrIn" fx:id="ipAddrIn" layoutX="934.0" layoutY="205.0" prefHeight="26.0" prefWidth="123.0" promptText="IP Address" />
-      <TextField id="portIn" fx:id="portIn" layoutX="1059.0" layoutY="205.0" prefHeight="26.0" prefWidth="46.0" promptText="Port" />
-      <TextArea id="statusText" fx:id="statusText" editable="false" layoutX="14.0" layoutY="460.0" prefHeight="146.0" prefWidth="529.0" />
-      <Label id="imageStatus" fx:id="imageStatus" layoutX="937.0" layoutY="17.0" prefHeight="18.0" prefWidth="200.0" text="Worker pool" />
-      <Button layoutX="934.0" layoutY="243.0" mnemonicParsing="false" onAction="#addWorker" text="New" />
-      <Pane fx:id="imgContainer" layoutX="181.0" layoutY="17.0" prefHeight="410.0" prefWidth="718.0">
+      <ScrollPane prefHeight="200.0" prefWidth="200.0" styleClass="rootPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <content>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="200.0" prefWidth="200.0" />
+        </content>
+      </ScrollPane>
+      <VBox prefHeight="200.0" prefWidth="100.0" styleClass="rootPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <ImageView fx:id="processedImage" fitHeight="410.0" fitWidth="718.0" pickOnBounds="true" preserveRatio="true" styleClass="mainImage" />
+            <MenuBar fx:id="menuBar">
+              <menus>
+                <Menu mnemonicParsing="false" text="File">
+                  <items>
+                    <MenuItem mnemonicParsing="false" text="Open video source" />
+                    <MenuItem mnemonicParsing="false" text="Open processed file" />
+                  </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="Edit">
+                  <items>
+                    <MenuItem mnemonicParsing="false" text="Edit face DB" />
+                    <MenuItem mnemonicParsing="false" text="Settings" />
+                  </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="Help">
+                  <items>
+                    <MenuItem mnemonicParsing="false" text="About" />
+                  </items>
+                </Menu>
+              </menus>
+            </MenuBar>
+            <HBox>
+               <children>
+                  <VBox prefHeight="200.0" spacing="5.0">
+                     <children>
+                        <Button mnemonicParsing="false" onAction="#openVideoWindow" prefWidth="200.0" text="Open Processed File" />
+                        <Button fx:id="button1" onAction="#selectSource" prefWidth="200.0" text="Process Video" />
+                        <Button mnemonicParsing="false" onAction="#fileTestButton" prefWidth="200.0" text="Save" />
+                        <Button mnemonicParsing="false" onAction="#openDBWindow" prefWidth="200.0" text="Face Database" />
+                          <Button fx:id="processButton" disable="true" onAction="#switchProcessing" prefWidth="200.0" text="Start Processing (debug)" />
+                        <Button mnemonicParsing="false" onAction="#debugButton" text="Button" />
+                     </children>
+                     <padding>
+                        <Insets left="15.0" right="15.0" top="40.0" />
+                     </padding>
+                  </VBox>
+                  <Pane fx:id="imgContainer" prefHeight="240.0" prefWidth="524.0">
+                     <children>
+                        <ImageView fx:id="processedImage" fitHeight="271.0" fitWidth="570.0" pickOnBounds="true" preserveRatio="true" styleClass="mainImage" />
+                        <ProgressBar fx:id="progressBar" layoutX="12.0" layoutY="89.0" prefHeight="40.0" prefWidth="500.0" progress="0.0" />
+                     </children>
+                  </Pane>
+                  <VBox spacing="5.0">
+                     <children>
+                        <Label id="imageStatus" fx:id="imageStatus" prefHeight="18.0" prefWidth="200.0" text="Worker pool" />
+                        <ListView fx:id="workerView" onMouseClicked="#updateSel" prefHeight="160.0" prefWidth="220.0" />
+                        <Button mnemonicParsing="false" onAction="#discover" text="Discover" />
+                     </children>
+                     <padding>
+                        <Insets left="15.0" right="15.0" top="10.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </HBox>
+            <Label id="imageStatus" fx:id="imageStatus11" prefHeight="18.0" prefWidth="200.0" text="Info">
+               <VBox.margin>
+                  <Insets left="15.0" right="15.0" />
+               </VBox.margin>
+            </Label>
+            <TextArea id="statusText" fx:id="statusText" editable="false" prefHeight="160.0" prefWidth="970.0">
+               <VBox.margin>
+                  <Insets bottom="15.0" left="15.0" right="15.0" />
+               </VBox.margin>
+            </TextArea>
          </children>
-      </Pane>
-      <ListView fx:id="workerView" layoutX="934.0" layoutY="40.0" onMouseClicked="#updateSel" prefHeight="162.0" prefWidth="216.0" />
-      <TextArea fx:id="responseText" editable="false" layoutX="586.0" layoutY="460.0" prefHeight="146.0" prefWidth="544.0" />
-      <Label id="imageStatus" fx:id="imageStatus1" layoutX="586.0" layoutY="437.0" prefHeight="18.0" prefWidth="200.0" text="Response" />
-      <Label id="imageStatus" fx:id="imageStatus11" layoutX="14.0" layoutY="437.0" prefHeight="18.0" prefWidth="200.0" text="Info" />
-      <Button layoutX="1108.0" layoutY="205.0" mnemonicParsing="false" onAction="#editWorker" text="Save" />
-      <Button disable="true" layoutX="984.0" layoutY="243.0" mnemonicParsing="false" text="Delete" />
-      <TextField fx:id="trainLabel" layoutX="19.0" layoutY="195.0" onKeyReleased="#updateLabel" prefHeight="26.0" prefWidth="123.0" />
-      <Label layoutX="20.0" layoutY="176.0" text="Train label:" />
-      <Button layoutX="21.0" layoutY="235.0" mnemonicParsing="false" onAction="#wipeDB" text="Wipe DB" />
-      <Button layoutX="21.0" layoutY="308.0" mnemonicParsing="false" onAction="#retrainClassifier" text="Retrain Classifier" />
-      <CheckBox layoutX="21.0" layoutY="96.0" mnemonicParsing="false" onAction="#displaySwitch" prefHeight="18.0" prefWidth="137.0" selected="true" text="Display frames" />
-      <CheckBox layoutX="21.0" layoutY="147.0" mnemonicParsing="false" onAction="#trainSwitch" prefHeight="18.0" prefWidth="138.0" text="Training mode" />
-      <Button layoutX="21.0" layoutY="272.0" mnemonicParsing="false" onAction="#dumpDB" text="Dump DB" />
-      <Button layoutX="952.0" layoutY="356.0" mnemonicParsing="false" onAction="#selectWebcam" text="Webcam" />
-      <Button layoutX="952.0" layoutY="392.0" mnemonicParsing="false" onAction="#forceCloseVC" text="Force close VC" />
-      <CheckBox layoutX="21.0" layoutY="122.0" mnemonicParsing="false" onAction="#rectSwitch" prefHeight="18.0" prefWidth="154.0" selected="true" text="Display rectangles" />
-      <Button layoutX="1025.0" layoutY="320.0" mnemonicParsing="false" onAction="#frameSeek" text="Seek" />
-      <TextField id="portIn" fx:id="frameIn" layoutX="952.0" layoutY="320.0" prefHeight="26.0" prefWidth="66.0" promptText="ms" />
-      <Label id="imageStatus" fx:id="imageStatus2" layoutX="937.0" layoutY="296.0" prefHeight="18.0" prefWidth="200.0" text="Debug functions" />
-      <Button layoutX="23.0" layoutY="356.0" mnemonicParsing="false" onAction="#testButton" text="TEST" />
+      </VBox>
     </children>
     <stylesheets>
         <URL value="@style.css" />

@@ -5,9 +5,14 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeoutException;
 import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javax.imageio.ImageIO;
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.videoio.VideoCapture;
 import static org.opencv.videoio.Videoio.CAP_PROP_POS_MSEC;
@@ -16,15 +21,19 @@ import static org.opencv.videoio.Videoio.CV_CAP_PROP_POS_FRAMES;
 
 
 public class VideoController {
+    
+    private static Semaphore videoSem = new Semaphore(1); // static semaphore for multiple controllers and calls accessing single file
+    
     private boolean active;
     private VideoCapture capture;
     private Controller guiController;
     private Link link;
     private MQLink mqlink;
-    private boolean stopFlag = false;
-    private boolean displayFrames = true;
     
-    private int frameDelay = 35;
+    private Mat lastFrameMat = null;
+    private double imgChangeThreshold = 0.00002;
+
+    private static double MAX_IMAGE_COLOUR_VALUE = 255;
     
     public VideoController() {
         this.capture = new VideoCapture();
@@ -44,34 +53,39 @@ public class VideoController {
         
         this.link = new Link();
         
-        // debug
-        MQLink.makeLink();
+
+        //MQLink.makeLink();
         this.mqlink = MQLink.getLink();
         try {
-            this.mqlink.connect("localhost");
+            this.mqlink.connect(FacerecConfig.RABBIT_MQ_SERVER_IP, FacerecConfig.RABBIT_MQ_SERVER_PORT);
             this.mqlink.declareQueue("default");
         } catch (IOException | TimeoutException ex) {
             System.err.println("MQlink error - cannot connect");
         }
-        // debug
-        link.connect(guiController.getWorkerPool().getDefault().ip, guiController.getWorkerPool().getDefault().port);
+
     }
     
     public boolean isActive() { return this.active; }
     
-    public void setDisplayFrames(boolean value) { displayFrames = value; }
     
     public Link getLink() { return this.link; }
     
     public void stop() {
         link.close();
-        stopFlag = true;
     }
     
     public void shutdown() {
-        stop();
-        active = false;
         capture.release();
+    }
+    
+    public void close() {
+        capture.release();
+    }
+    
+    public void skipFrames(double count) {
+        if (count == 0) { return; }
+        
+        capture.set(CV_CAP_PROP_POS_FRAMES, capture.get(CV_CAP_PROP_POS_FRAMES)+count);
     }
     
     public void seekFrame(double frame) {
@@ -102,26 +116,39 @@ public class VideoController {
         System.out.println(capture.isOpened());
     }
     
-    public Mat grabFrame() {
+    public Mat grabFrame(boolean frameSkip) {
         Mat frame = new Mat();
+        
+        try { videoSem.acquire(); }
+        catch (InterruptedException ex) { return frame; }
+        
         if (this.capture.isOpened()) {
-            if (!this.capture.read(frame)) {
-                System.out.println("Reached end");
-                if (isActive()) {
-                    Platform.runLater(new Runnable() {
-                            @Override
-                                public void run() {
-                                    guiController.switchProcessing(null);
-                                    capture.set(CV_CAP_PROP_POS_FRAMES, 0);
-                                }
-                        });
+            if (this.capture.read(frame)) {
+                // read ok, skip frames
+                if (frameSkip) {
+                    skipFrames(FacerecConfig.FRAME_SKIP);
                 }
             }
-            
+            else {
+                // read failed
+                System.out.println("Reached end");
+                if (isActive()) {
+                    capture.set(CV_CAP_PROP_POS_FRAMES, 0);
+                }
+            }
+        }
+        else {
+            System.err.println("NOT OPEN");
         }
         
+        videoSem.release();
         return frame;
     }
+    
+    public Mat grabFrame() {
+        return grabFrame(true);
+    }
+    
     
     public byte[] imageToByteArray(BufferedImage img) {
         byte[] bytes;
@@ -142,19 +169,30 @@ public class VideoController {
     
     public void setTrainingMode(boolean mode) { link.setTrainingMode(mode); }
     
-    public void processFrame(String messageQueueName) {
+    
+    //  returns -1 for fail, 0 for ok, 1 for skipped frame
+    public int processFrame(String messageQueueName, boolean skipSimilarFrames, int forceFrameNumber) {
         Mat frame = grabFrame();
         
         if (!frame.empty()) {
+            
+            if (skipSimilarFrames && forceFrameNumber==0 && !changed(frame)) {
+                System.out.print((long) currFrame());
+                System.out.println(": similar frame skip!");
+                
+                // increment counter for skipped frames
+                Controller.getCurrentController().getDispatcher().incrementFrameCounter();
+                return 1;
+            }
+            
             BufferedImage bimg = matToBufferedImage(frame);
             
-            //String resp = link.processRequest(imageToByteArray(bimg));
-            System.out.print("CURR FRAME: ");
-            System.out.println();
             
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
             try {
-                String header = Integer.toString((int)currFrame());
+                String header;
+                if (forceFrameNumber == 0) { header = Long.toString((long)currFrame()); }
+                else { header = Integer.toString(forceFrameNumber); }
                 header += ",";
                 outputStream.write( header.getBytes() );
                 outputStream.write( imageToByteArray(bimg) );
@@ -162,6 +200,7 @@ public class VideoController {
             }
             catch (IOException ex) {
                 ex.printStackTrace();
+                return -1;
             }
             
             byte request[] = outputStream.toByteArray( );
@@ -170,30 +209,72 @@ public class VideoController {
                 mqlink.publish(messageQueueName, request);
             } catch (IOException ex) {
                 System.out.println("Send failed");
+                return -1;
             }
-            
-            /*
-            Image img = SwingFXUtils.toFXImage(bimg, null);
-            
-            
-            Platform.runLater(new Runnable() {
-                            @Override
-                                public void run() {
-                                    if (displayFrames) {
-                                        guiController.displayImage(img, resp);
-                                    }
-                                    guiController.setResponseText(resp);
-                                }
-                        });*/
-            
         }
+        else {
+            return -1;
+        }
+        return 0;
         
     }
+    
+    public int processFrame(String messageQueueName, boolean skipSimilarFrames) {
+        return processFrame(messageQueueName, skipSimilarFrames, 0);
+    }
+    
+    public int processFrame(String messageQueueName) {
+        return processFrame(messageQueueName, true, 0);
+    }
+    
+    
     
     public void captureSwitch(){
         active = !active;
     }
     
+    
+    public Image displayFrame(ImageView imview) {
+        
+        Mat frame = grabFrame(false);
+        
+        if (!frame.empty()) {
+            System.err.println(changed(frame)); // DEBUG!
+            Image img = SwingFXUtils.toFXImage(matToBufferedImage(frame), null);
+            
+            
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    imview.setImage(img);
+                }
+            });
+            return img;
+        }
+        return null;
+    }
+    
+    // compare with prev mat
+    private boolean changed(Mat m) {
+        if (lastFrameMat == null) {
+            lastFrameMat = m;
+            return true;
+        }
+        
+        boolean res;
+        double diff = Core.norm(lastFrameMat, m) / (m.size().area()*VideoController.MAX_IMAGE_COLOUR_VALUE);
+        
+        /*System.out.println(m.size().area()*VideoController.MAX_IMAGE_COLOUR_VALUE*3);
+        System.out.println(720*1280*255*3);
+        System.out.println(m.get(100, 100)[0]);
+        System.out.println(diff);*/
+        
+        if ( diff > imgChangeThreshold) { res = true; }
+        else { res = false; }
+        
+        lastFrameMat = m;
+        return res;
+    }
     
     private static BufferedImage matToBufferedImage(Mat original){
 	// init

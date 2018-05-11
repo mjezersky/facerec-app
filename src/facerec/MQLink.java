@@ -3,6 +3,7 @@ package facerec;
 
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Channel;
@@ -30,12 +31,14 @@ public class MQLink {
     
     public static MQLink getLink() { return currentLink; };
     
-    public void connect(String host) throws IOException, TimeoutException {
+    public void connect(String host, int port) throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(host);
+        factory.setPort(port);
         connection = factory.newConnection();
         channel = connection.createChannel();
         connection.addShutdownListener(new ShutdownListener() {
+            @Override
             public void shutdownCompleted(ShutdownSignalException cause)
             {
                 shutdownListener(cause);
@@ -43,7 +46,15 @@ public class MQLink {
         });
     }
     
+    public boolean isChannelOpen() {
+        if (channel == null) { return false; }
+        return channel.isOpen();
+    }
     
+    public boolean isConnectionOpen() {
+        if (connection == null) { return false; }
+        return connection.isOpen();
+    }
     
     public void declareQueue(String queueName) throws IOException {
         //channel.queueDelete(queueName);
@@ -55,10 +66,17 @@ public class MQLink {
     }
 
     public void close() {
+        try {channel.abort(); }
+        catch (AlreadyClosedException|NullPointerException|IOException ex) {}
+        try { channel.queuePurge("feedback-"+FacerecConfig.WORKER_GROUP_NAME); }
+        catch (AlreadyClosedException|NullPointerException|IOException ex) {}
         try { channel.close(); }
-        catch (IOException | TimeoutException ex) { }
+        catch (AlreadyClosedException|NullPointerException|IOException | TimeoutException ex) {}
+        try { connection.abort(); }
+        catch (AlreadyClosedException|NullPointerException ex) {}
         try { connection.close(); }
-        catch (IOException ex) { }
+        catch (AlreadyClosedException|NullPointerException|IOException ex) {}
+        
     }
     
     public void broadcast(String exchangeName, String message) throws IOException {
@@ -95,32 +113,15 @@ public class MQLink {
           dispatcher.processMessage(message);
         }
       };
-      channel.basicConsume(Dispatcher.QUEUE_NAME, true, consumer);
+      channel.basicConsume("feedback-"+FacerecConfig.WORKER_GROUP_NAME, true, consumer);
     }
     
     
     private void shutdownListener(ShutdownSignalException cause) {
+        System.out.println("Channel shutdown.");
         if (cause.isHardError()) {
             System.err.println("Error: unexpected channel shutdown.");
             cause.printStackTrace();
-        }
-    }
-    
-    public static void test() {
-        String QUEUE_NAME = "test";
-        try {
-            MQLink link = new MQLink();
-            link.connect("localhost");
-            link.declareQueue(QUEUE_NAME);
-            link.publish(QUEUE_NAME, "Hello!");
-            link.publish(QUEUE_NAME, "1");
-            link.publish(QUEUE_NAME, "2");
-            link.publish(QUEUE_NAME, "3");
-            link.close();
-            
-        }
-        catch(IOException | TimeoutException ex) {
-            System.err.println("MQLink error");
         }
     }
     

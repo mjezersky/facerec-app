@@ -32,9 +32,15 @@ public class WorkerPool {
         return null;
     }
     
+    public Worker get(int index) {
+        return pool.get(index);
+    }
+    
+    public boolean isEmpty() { return pool.isEmpty(); }
+    
     public void clear() {
         pool.clear();
-        guiElement.setItems(pool);
+        if (Facerec.GUI_ENABLED) { guiElement.setItems(pool); }
     }
     
     public void addWorkerNG(String name, VideoController vc) {
@@ -42,19 +48,19 @@ public class WorkerPool {
             @Override
             public void run() {
                 pool.add(new Worker(name, vc));
-                guiElement.setItems(pool);
+                if (Facerec.GUI_ENABLED) { guiElement.setItems(pool); }
             }
         });
     }
     
     public void addWorker(String name, VideoController vc) {
         pool.add(new Worker(name, vc));
-        guiElement.setItems(pool);
+        if (Facerec.GUI_ENABLED) { guiElement.setItems(pool); }
     }
     
     public void addWorker(String ip, int port) {
         pool.add(new Worker(ip, port));
-        guiElement.setItems(pool);
+        if (Facerec.GUI_ENABLED) { guiElement.setItems(pool); }
     }
     
     public boolean isSelected() {

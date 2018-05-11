@@ -8,6 +8,16 @@ public class RectangleObject {
     public int bottom = 0;  // y2
 
 
+    public RectangleObject() {
+    }
+    
+    public RectangleObject(RectangleObject copyFrom) {
+        this.left = copyFrom.left;
+        this.top = copyFrom.top;
+        this.right = copyFrom.right;
+        this.bottom = copyFrom.bottom;
+    }
+    
     public void scale(double factor) {
         left *= factor;
         top *= factor;
@@ -23,6 +33,7 @@ public class RectangleObject {
     }
     
     public boolean similar(RectangleObject r, double threshold) {
+        if (ratio(r) < threshold) {System.out.print(ratio(r)+" "+this.toString() + " / "+r.toString() + "  ");}
         return ratio(r) >= threshold;
     }
     
@@ -48,6 +59,16 @@ public class RectangleObject {
         hash = 19 * hash + this.bottom;
         return hash;
     }
+    
+    @Override
+    public String toString() {
+        String res = "";
+        res += Integer.toString(this.left)+"#";
+        res += Integer.toString(this.top)+"#";
+        res += Integer.toString(this.right)+"#";
+        res += Integer.toString(this.bottom);
+        return res;
+    }
 
     public static RectangleObject deserializeRect(String msgString) {
         RectangleObject rect = new RectangleObject();
@@ -56,6 +77,8 @@ public class RectangleObject {
             System.err.println("RectangleObject.deserializeRect - Error: deserializing null string.");
             return null;
         }
+        
+        if (msgString.equals("none")) { return null; }
         
         String[] strData = msgString.split("#");
         if (strData.length != 4) {

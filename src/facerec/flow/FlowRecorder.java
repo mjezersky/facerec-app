@@ -1,9 +1,12 @@
 
 package facerec.flow;
 
+import facerec.FacerecConfig;
 import facerec.RectangleObject;
 import facerec.result.Result;
 import facerec.result.ResultFragment;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -11,136 +14,96 @@ import java.util.Objects;
 public class FlowRecorder {
     
     private ArrayList<Flow> buffer;
-    private int maxAge = 3;                 // max flow age
-    private double matchThreshold = 0.8;
+    private int maxAge = 5;                 // max flow age
+    private double matchThreshold = FacerecConfig.RECTANGLE_MATCH_THRESHOLD;
+    private FileWriter fw;
     
-    public FlowRecorder() {
+    private ArrayList<Flow> flows;
+    
+    
+    public FlowRecorder(String filename) throws IOException {
         this.buffer = new ArrayList();
+        this.flows = new ArrayList();
+        this.fw = new FileWriter(filename);
     }
     
-    public void feed(Result res) {
+    public FlowRecorder() {
+        this.flows = new ArrayList();
+    }
+    
+    public void addFlow(String flowString) {
+        flows.add(Flow.parseFlow(flowString));
+    }
+    
+    private void addFlow(Flow flow) {
+        flows.add(flow);
+    }
+    
+    public ArrayList<Flow> getFlows() { return flows; }
+    
+    public void feed(Result res) throws IOException {
         
         
         for (ResultFragment fmt : res.fragments) {
             RectangleObject r = RectangleObject.deserializeRect(fmt.rectString);
-            String person = fmt.name;
             boolean match = false;
+            
+            if (fmt.name.equals("none")) { break; }
+            
+            System.out.print(Double.toString(res.frame) + ": "+fmt.name+" : ");
             
             for (Flow f : buffer) {
                 if (f.match(r, matchThreshold)) {
-                    f.feed(res.frame, person, r);
+                    f.feed(res.frame, fmt.name, fmt.confidence, r, fmt.features);
                     match = true;
                     break;
                 }
             }
-            
+            System.out.println(match);
             // if no match, create new flow
             if (!match) {
-                buffer.add(new Flow(res.frame, r));
+                buffer.add(new Flow(res.frame, fmt.name, fmt.confidence, r, fmt.features));
             }
             
         }
         
         // age all flows
+        ArrayList<Flow> purgeList = new ArrayList();
         for (Flow f : buffer) {
             f.age++;
             if (f.age>maxAge) {
-                // finalize old flows
-                buffer.remove(f);
-                f.flush();
+                // finalize old flows and add to removal queue
+                purgeList.add(f);
+                //writeFlow(f);
+                flows.add(f);
             }
         }
+        
+        // remove old flows
+        for (Flow f : purgeList) {
+            buffer.remove(f);
+        }
+        purgeList.clear();
 
-    }
+    }    
     
-    public void flush() {
-        // finalize all remaining flows
+    public void flushBuffer() {
         for (Flow f : buffer) {
-            f.flush();
+            flows.add(f);
         }
         buffer.clear();
     }
     
-    private class Occurrence {
-        public String person;
-        public int count;
+    public void flush() throws IOException {
+        // finalize all remaining flows
+        flushBuffer();
         
-        public Occurrence(String person) {
-            this.person = person;
+        for (Flow f : flows) {
+            fw.write(f.toString()+"\n");
         }
+        fw.flush();
         
-        public void inc() {
-            count++;
-        }
-        
-        @Override
-        public boolean equals(Object o) {
-            if (o == null) { return false; }
-            if (o.getClass() != Occurrence.class) { return false; }
-            return this.person.equals( ((Occurrence) o).person );
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 3;
-            hash = 29 * hash + Objects.hashCode(this.person);
-            return hash;
-        }
-        
-    }
-    
-    private class Flow {
-        public int age = 0;
-        public double firstFrame;
-        public double lastFrame;
-        public RectangleObject lastRectangle;
-        public ArrayList<Occurrence> occurrences;
-        
-        public Flow(double frameNum, RectangleObject rectangle) {
-            this.occurrences = new ArrayList();
-            this.firstFrame = this.lastFrame = frameNum;
-            this.lastRectangle = rectangle;
-        }
-        
-        public void feed(double frameNum, String person, RectangleObject rectangle) {
-            age = 0;
-            lastFrame = frameNum;
-            lastRectangle = rectangle;
-            
-            // find if person exists in occurrences and increment count, or create a new one
-            for (Occurrence oc : occurrences) {
-                if (oc.person.equals(person)) {
-                    oc.count++;
-                    return;
-                }
-            }
-            // if program reached here, no occurrence was found, create a new one
-            occurrences.add(new Occurrence(person));
-            
-        }
-        
-        public boolean match(RectangleObject r, double threshold) {
-            return this.lastRectangle.similar(r, threshold);
-        }
-        
-        public void flush() {
-            // TODO
-        }
-        
-        @Override
-        public boolean equals(Object o) {
-            if (o == null) { return false; }
-            if (o.getClass() != Flow.class) { return false; }
-                        
-            return (this.lastRectangle.equals( ((Flow) o).lastRectangle ));
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 5;
-            hash = 97 * hash + Objects.hashCode(this.lastRectangle);
-            return hash;
-        }
-        
+        try { fw.close(); }
+        catch (IOException ex) {}
     }
 }
