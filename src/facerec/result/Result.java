@@ -6,17 +6,31 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
+/**
+ * Class representing a single response from a worker, contains data about the frame, and specific detections in the frame in the form of ResultFragments.
+ * @author Matous Jezersky
+ */
 public class Result {
     public String workerName;
     public String filename;
     public double frame;
+    public double seconds;
     public ArrayList<ResultFragment> fragments;
     
+    /**
+     * Default constructor.
+     */
     public Result() {
         fragments = new ArrayList();
     }
     
-    public static Result parseResult(String msg) {       
+    /**
+     * Parses a Result object from a message.
+     * @param msg message to parse
+     * @param sourceFPS framerate of the source video
+     * @return result object
+     */
+    public static Result parseResult(String msg, double sourceFPS) {       
         Result res = new Result();
         
         //type;workerName;frame;rectangle,person,confidence,feature_vector_or_empty_string;...
@@ -31,6 +45,7 @@ public class Result {
         res.workerName = strFragments[1];
         try {
             res.frame = Double.parseDouble(strFragments[2]);
+            res.seconds = res.frame/sourceFPS;
         }
         catch (NumberFormatException ex) {
             System.err.println("Result.parseResult - Error: invalid string.");
@@ -46,18 +61,30 @@ public class Result {
         return res;
     }
     
+    /**
+     * Returns a string representation of this object.
+     * @return string representation of this object
+     */
     @Override
     public String toString() {
         String res = "";
         
         for (ResultFragment fmt : this.fragments){
-            res += Double.toString(frame) + ",";
-            res += fmt.toString() + "\n";
+            if (!fmt.name.equals("none")) {
+                res += Double.toString(frame) + ",";
+                res += Double.toString(seconds) + ",";
+                res += fmt.toString() + "\n";
+            }
         }
         
         return res;
     }
     
+    /**
+     * Deserializes a feature vector.
+     * @param vecStr serialized feature vector
+     * @return feature vector
+     */
     public static Mat deserializeVec(String vecStr) {
         if (vecStr == null) { return null; }
         if (vecStr.equals("none")) { return null; }
@@ -67,7 +94,7 @@ public class Result {
         
         try {
             for (int i=0; i<data.length; i++) {
-                m.put(1, i, Double.parseDouble(data[i]));
+                m.put(0, i, Double.parseDouble(data[i]));
             }
         }
         catch (NumberFormatException ex) {
@@ -78,8 +105,15 @@ public class Result {
         return m;        
     }
     
+    /**
+     * Calculates Euclidean distance between two vectors.
+     * @param a vector A
+     * @param b vector B
+     * @return Euclidean distance between A and B
+     */
     public static double euclideanDist(Mat a, Mat b) {
         return Core.norm(a, b);
     }
+
 
 }

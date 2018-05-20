@@ -50,7 +50,7 @@
                                     <TextField fx:id="namePrompt" promptText="Name" />
                                     <Button mnemonicParsing="false" onAction="#selectImages" text="Select Images" />
                                     <Label fx:id="associatedImages" prefHeight="26.0" prefWidth="180.0" text="Associated images: 0" />
-                                    <Button fx:id="btnAdd" mnemonicParsing="false" onAction="#addToTable" prefHeight="26.0" prefWidth="111.0" text="Add to table">
+                                    <Button fx:id="btnAdd" mnemonicParsing="false" onAction="#addToTable" prefHeight="26.0" prefWidth="111.0" text="Add to Table">
                                        <HBox.margin>
                                           <Insets left="30.0" />
                                        </HBox.margin>

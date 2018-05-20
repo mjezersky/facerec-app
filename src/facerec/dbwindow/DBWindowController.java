@@ -1,11 +1,11 @@
 package facerec.dbwindow;
 
 import facerec.Controller;
+import facerec.Facerec;
 import facerec.FacerecConfig;
 import facerec.Worker;
 import facerec.result.Result;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
@@ -24,11 +24,13 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextField;
-import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.util.Callback;
 
-
+/**
+ * Controller for DB window and DB management for GUI and CLI.
+ * @author Matous Jezersky
+ */
 public class DBWindowController implements Initializable {
     private DBBridge dbbridge;
     
@@ -50,10 +52,13 @@ public class DBWindowController implements Initializable {
     @FXML private TextField namePrompt;
     @FXML private Label associatedImages;
     
+    /**
+     * Handler for a response to DB frame request.
+     * @param res result to process
+     */
     public void processResponse(Result res) {
         
         // process result
-        System.out.println("added");
         facedb.addFace(dbAddList.get(currentListIndex).name, res.fragments.get(0).features);
         dbAddList.get(currentListIndex).state = 2;
         changeListCellState(currentListIndex, 2);
@@ -64,42 +69,59 @@ public class DBWindowController implements Initializable {
             // finalize, enable buttons again
             facedb.save(FacerecConfig.FACE_DB_FILENAME);
             safeListClear();
-            dbAddListView.setItems(dbAddList);
+            if (Facerec.GUI_ENABLED) { dbAddListView.setItems(dbAddList); }
             setButtonsDisable(false);
             try {
                 Controller.getCurrentController().broadcastDB();
             }
-            catch (IOException ex) {
-                System.err.println("Automatic DB refresh failed, try again manually.");
+            catch (Exception ex) {
+                Facerec.warning("Automatic DB refresh failed, try again manually by re-running Discover.");
             }
+            if (!Facerec.GUI_ENABLED) { reportCLIEnd(); }
             return;
         }
         changeListCellState(currentListIndex, 1);
         worker.processDBImage(dbAddList.get(currentListIndex).image);
     }
     
+    // clears add to DB list
     private void safeListClear() {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                dbAddList.clear();
-                dbAddListView.refresh();
-            }
-        });
+        if (Facerec.GUI_ENABLED) {
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    dbAddList.clear();
+                    dbAddListView.refresh();
+                }
+            });
+        }
     }
     
+    // disables/enables buttons before and after processing
     private void setButtonsDisable(boolean value) {
-        btnAdd.disableProperty().set(value);
-        btnDelete.disableProperty().set(value);
-        btnProcess.disableProperty().set(value);
+        if (Facerec.GUI_ENABLED) {
+            btnAdd.disableProperty().set(value);
+            btnDelete.disableProperty().set(value);
+            btnProcess.disableProperty().set(value);
+        }
     }
     
+    // report DB adding end to CLI
+    private void reportCLIEnd() {
+        Facerec.cliFinish();
+    }
+    
+    /**
+     * Adds a new image file to process to processing list.
+     * @param name name of the person
+     * @param filename image file name
+     */
     public void listAdd(String name, String filename) {
         FaceListElement face = new FaceListElement(name, filename);
         dbAddList.add(face);
     }
         
-    
+    // change cells factory to allow for colour changing
     private void setLVFactory() {
         dbAddListView.setCellFactory(new Callback<ListView<FaceListElement>, ListCell<FaceListElement>>() {
                     @Override
@@ -111,15 +133,19 @@ public class DBWindowController implements Initializable {
                                 if(elem != null) {
                                     setText(elem.toString());
                                     if(elem.state == 1) {
-                                        System.out.println(Integer.toString(elem.state)+ " " + elem.toString());
+                                        this.getStyleClass().remove("operation-complete");
                                         this.getStyleClass().add("operation-processing");
                                     } else if(elem.state == 2) {
-                                        System.out.println(Integer.toString(elem.state)+ " " + elem.toString());
                                         this.getStyleClass().remove("operation-processing");
                                         this.getStyleClass().add("operation-complete");
+                                    } else {
+                                        this.getStyleClass().remove("operation-processing");
+                                        this.getStyleClass().remove("operation-complete");
                                     }
                                 }
                                 else {
+                                    this.getStyleClass().remove("operation-processing");
+                                    this.getStyleClass().remove("operation-complete");
                                     setText("");
                                 }                
                             }
@@ -130,18 +156,22 @@ public class DBWindowController implements Initializable {
                 });
     }
     
+    // change cell colour
     private void changeListCellState(int index, int state) {
         dbAddList.get(index).state = state;
         
         // list view force update
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                dbAddListView.refresh();
-            }
-        });
+        if (Facerec.GUI_ENABLED) {
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    dbAddListView.refresh();
+                }
+            });
+        }
     }
     
+    // delete from DB add list
     @FXML private void addListDelete(Event evt) {
         if (dbAddListView.getSelectionModel().isEmpty()) { return; }
         ObservableList<Integer> indices = dbAddListView.getSelectionModel().getSelectedIndices();
@@ -157,6 +187,7 @@ public class DBWindowController implements Initializable {
         dbAddListView.refresh();
     }
     
+    // delete from DB view list
     @FXML private void delSelected(Event evt) {
         if (dbListView.getSelectionModel().isEmpty()) { return; }
         ObservableList<Integer> indices = dbListView.getSelectionModel().getSelectedIndices();
@@ -170,27 +201,39 @@ public class DBWindowController implements Initializable {
         }
         facedb.save(FacerecConfig.FACE_DB_FILENAME);
         refreshDBListView(null);
+        
+        // refresh DB for already connected workers after deletion
+        try {
+            Controller.getCurrentController().broadcastDB();
+        }
+        catch (Exception ex) {
+            Facerec.warning("Automatic DB refresh failed, try again manually by re-running Discover.");
+        }
     }
     
+    // refresh GUI element
     @FXML private void refreshDBListView(Event evt) {
         if (facedb == null) { return; }
-        System.out.println(facedb.getFaces().size());
+        
         dbItemsList.clear();
         for (String[] face : facedb.getFaces()) {
             dbItemsList.add(face[0]+" \t\t"+face[1]);
         }
     }
     
-    @FXML private void processImages() {
+    /**
+     * Processes names and assigned images in DB add list.
+     */
+    @FXML public void processImages() {
         // ! add check for empty pool
         if (Controller.getCurrentController().getWorkerPool().isEmpty()) {
-            System.err.println("Error: DBWindowController - empty worker pool.");
+            Facerec.error("No workers available.");
             return;
         }
-        setButtonsDisable(true);
         worker = Controller.getCurrentController().getWorkerPool().get(0);
 
         if (dbAddList.isEmpty()) { return; }
+        setButtonsDisable(true);
         currentListIndex = 0;
         worker.initVideoController(dbbridge.getMQLink());
 
@@ -198,14 +241,15 @@ public class DBWindowController implements Initializable {
         worker.processDBImage(dbAddList.get(0).image);
     }
     
+    // add name and images to DB add table
     @FXML private void addToTable(ActionEvent evt) {
         String name = namePrompt.getText();
         if (addImageFileList == null) {
-            System.err.println("Error: no images selected");
+            Facerec.error("No images selected");
             return;
         }
         if (name.isEmpty()) {
-            System.err.println("Error: no name set");
+            Facerec.error("No name set");
             return;
         }
         for (File f : addImageFileList) {
@@ -216,6 +260,7 @@ public class DBWindowController implements Initializable {
         associatedImages.setText("Associated images: 0");
     }
     
+    // select images for a person
     @FXML private void selectImages(ActionEvent evt) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Specify input source");
@@ -226,14 +271,22 @@ public class DBWindowController implements Initializable {
         
     }
     
+    /**
+     * Initializer for DB Window controller.
+     * @param url JavaFX parameter, can be null when not using GUI
+     * @param rb JavaFX parameter, can be null when not using GUI
+     */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         dbItemsList = FXCollections.observableArrayList();
         dbAddList = FXCollections.observableArrayList();
-        dbListView.setItems(dbItemsList);
-        dbAddListView.setItems(dbAddList);
-        setLVFactory();
-        dbListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        
+        if (Facerec.GUI_ENABLED) {
+            dbListView.setItems(dbItemsList);
+            dbAddListView.setItems(dbAddList);
+            setLVFactory();
+            dbListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        }
         
         dbbridge = Controller.getCurrentController().getDBBridge();
         dbbridge.registerDBWController(this);

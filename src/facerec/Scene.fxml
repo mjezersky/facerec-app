@@ -30,19 +30,14 @@
               <menus>
                 <Menu mnemonicParsing="false" text="File">
                   <items>
-                    <MenuItem mnemonicParsing="false" text="Open video source" />
-                    <MenuItem mnemonicParsing="false" text="Open processed file" />
+                    <MenuItem mnemonicParsing="false" onAction="#selectSource" text="Open video source" />
+                    <MenuItem mnemonicParsing="false" onAction="#openVideoWindow" text="Open processed file" />
+                    <MenuItem mnemonicParsing="false" onAction="#exportPasses" text="Export passes from file" />
                   </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Edit">
                   <items>
-                    <MenuItem mnemonicParsing="false" text="Edit face DB" />
-                    <MenuItem mnemonicParsing="false" text="Settings" />
-                  </items>
-                </Menu>
-                <Menu mnemonicParsing="false" text="Help">
-                  <items>
-                    <MenuItem mnemonicParsing="false" text="About" />
+                    <MenuItem mnemonicParsing="false" onAction="#openDBWindow" text="Edit face DB" />
                   </items>
                 </Menu>
               </menus>
@@ -51,12 +46,10 @@
                <children>
                   <VBox prefHeight="200.0" spacing="5.0">
                      <children>
-                        <Button mnemonicParsing="false" onAction="#openVideoWindow" prefWidth="200.0" text="Open Processed File" />
                         <Button fx:id="button1" onAction="#selectSource" prefWidth="200.0" text="Process Video" />
-                        <Button mnemonicParsing="false" onAction="#fileTestButton" prefWidth="200.0" text="Save" />
+                        <Button mnemonicParsing="false" onAction="#openVideoWindow" prefWidth="200.0" text="Open Processed File" />
+                        <Button mnemonicParsing="false" onAction="#exportPasses" prefWidth="200.0" text="Export Passes" />
                         <Button mnemonicParsing="false" onAction="#openDBWindow" prefWidth="200.0" text="Face Database" />
-                          <Button fx:id="processButton" disable="true" onAction="#switchProcessing" prefWidth="200.0" text="Start Processing (debug)" />
-                        <Button mnemonicParsing="false" onAction="#debugButton" text="Button" />
                      </children>
                      <padding>
                         <Insets left="15.0" right="15.0" top="40.0" />
@@ -66,6 +59,7 @@
                      <children>
                         <ImageView fx:id="processedImage" fitHeight="271.0" fitWidth="570.0" pickOnBounds="true" preserveRatio="true" styleClass="mainImage" />
                         <ProgressBar fx:id="progressBar" layoutX="12.0" layoutY="89.0" prefHeight="40.0" prefWidth="500.0" progress="0.0" />
+                          <Button fx:id="cancelButton" disable="true" layoutX="162.0" layoutY="136.0" onAction="#cancelProcessing" prefWidth="200.0" text="Cancel" />
                      </children>
                   </Pane>
                   <VBox spacing="5.0">

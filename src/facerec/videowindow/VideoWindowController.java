@@ -2,20 +2,28 @@
 package facerec.videowindow;
 
 import facerec.Controller;
+import facerec.Facerec;
+import facerec.FacerecConfig;
 import facerec.RectangleObject;
 import facerec.VideoController;
 import facerec.flow.Flow;
 import facerec.flow.FlowRecorder;
 import facerec.flow.ListElementFlow;
+import facerec.result.RawFileReader;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Slider;
@@ -26,8 +34,13 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.FileChooser;
+import javax.imageio.ImageIO;
 
-
+/**
+ * Controller for the video view window.
+ * @author Matous Jezersky
+ */
 public class VideoWindowController implements Initializable {
 
     @FXML private ImageView imView;
@@ -41,6 +54,8 @@ public class VideoWindowController implements Initializable {
     @FXML private Label passesLabel;
     @FXML private Label searchResultLabel;
     @FXML private TextField searchField;
+    @FXML private Button searchButton;
+    @FXML private Button clearButton;
 
     private Rectangle displayRect = null;
     private boolean displayRectangles = true;
@@ -50,10 +65,13 @@ public class VideoWindowController implements Initializable {
     private ObservableList<ListElementFlow> flows;
     private VideoStatistics vs;
     private double totalFrames;
+    private Image currImage;
+    private boolean searchSwitch = false;
     
-    private static Color CANVAS_COLOR_UNSELECTED = Color.rgb(68, 68, 229, 0.3);
-    private static Color CANVAS_COLOR_SELECTED = Color.rgb(207, 90, 90, 1);
+    private static final Color CANVAS_COLOR_UNSELECTED = Color.rgb(68, 68, 229, 0.3);
+    private static final Color CANVAS_COLOR_SELECTED = Color.rgb(207, 90, 90, 1);
     
+    // display frame in window
     private Image showFrame() {
         if (displayRect != null) {
             imgContainer.getChildren().remove(displayRect);
@@ -61,14 +79,14 @@ public class VideoWindowController implements Initializable {
         
         videoSlider.setValue(vc.currFrame());
         setProgressLabel(vc.currFrame());
-        Image img = vc.displayFrame(imView);
+        currImage = vc.displayFrame(imView);
                 
-        return img;
+        return currImage;
     }
     
+    // draw rectangle over frame
     private void drawRectangle(Image img, RectangleObject faceRect) {
         if (!displayRectangles) { return; }
-        System.out.println(faceRect.toString());
         if (faceRect != null) {
             
             
@@ -84,44 +102,70 @@ public class VideoWindowController implements Initializable {
         }
     }
     
+    // sets frame number display for position in video
     private void setProgressLabel(double frameNum) {
         progressLabel.setText(Long.toString((long) frameNum));
     }
     
     @FXML
-    public void play(ActionEvent evt) {
+    private void play(ActionEvent evt) {
         showFrame();
     }
     
     @FXML
-    public void pause(ActionEvent evt) {
+    private void pause(ActionEvent evt) {
         
     }
     
     @FXML
-    public void prevFrame(ActionEvent evt) {
+    private void prevFrame(ActionEvent evt) {
         vc.seekFrame(vc.currFrame()-2);
         showFrame();
     }
     
     @FXML
-    public void nextFrame(ActionEvent evt) {
+    private void nextFrame(ActionEvent evt) {
         showFrame();
     }
     
     @FXML
-    public void seekUpdate(MouseEvent evt) {
+    private void seekUpdate(MouseEvent evt) {
         setProgressLabel(videoSlider.getValue());
     }
     
     @FXML
-    public void seekConfirm(MouseEvent evt) {
+    private void seekConfirm(MouseEvent evt) {
         vc.seekFrame(videoSlider.getValue()-1);
         showFrame();
     }
     
+    // stores a snapshot of the currently opened frame
     @FXML
-    public void jumpToStart(ActionEvent evt) {
+    private void saveSnapshot(ActionEvent evt) {
+        if (currImage == null) { return; }
+        
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save snapshot as");
+        fileChooser.setInitialFileName("snapshot.jpg");
+        File outfile = fileChooser.showSaveDialog(Facerec.currentStage);
+        if (outfile == null) {
+            return;
+        }
+        BufferedImage bImage = SwingFXUtils.fromFXImage(currImage, null);
+        int w = bImage.getWidth();
+        int h = bImage.getHeight();
+        BufferedImage newImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        int[] rgb = bImage.getRGB(0, 0, w, h, null, 0, w);
+        newImage.setRGB(0, 0, w, h, rgb, 0, w);
+        try {
+            ImageIO.write(newImage, "jpg", outfile);
+        } catch (IOException ex) {
+            Facerec.error("Error: Failed to save snapshot.");
+        }
+    }
+    
+    @FXML
+    private void jumpToStart(ActionEvent evt) {
         ObservableList<ListElementFlow> sel = flowList.getSelectionModel().getSelectedItems();
         if (!sel.isEmpty()) {
             ListElementFlow lef = sel.get(0);
@@ -131,7 +175,7 @@ public class VideoWindowController implements Initializable {
     }
     
     @FXML
-    public void jumpToEnd(ActionEvent evt) {
+    private void jumpToEnd(ActionEvent evt) {
         ObservableList<ListElementFlow> sel = flowList.getSelectionModel().getSelectedItems();
         if (!sel.isEmpty()) {
             ListElementFlow lef = sel.get(0);
@@ -141,7 +185,7 @@ public class VideoWindowController implements Initializable {
     }
     
     @FXML
-    public void jumpToBestFrame(ActionEvent evt) {
+    private void jumpToBestFrame(ActionEvent evt) {
         ObservableList<ListElementFlow> sel = flowList.getSelectionModel().getSelectedItems();
         if (!sel.isEmpty()) {
             ListElementFlow lef = sel.get(0);
@@ -160,19 +204,46 @@ public class VideoWindowController implements Initializable {
         drawFrames(sel, VideoWindowController.CANVAS_COLOR_SELECTED);
     }
     
+    // advanced search for a person specified by name in the name field
     @FXML
     private void search(ActionEvent evt) {
-        int count = vs.getOccurrenceCount(searchField.getText());
+        Controller c = Controller.getCurrentController();
+        FlowRecorder newFR;
+        try {
+            if (searchSwitch) {
+                newFR = RawFileReader.openRawAsFlow( c.getCurrDataFile() );
+            }
+            else {
+                // while doing specific search, turn off unknown clustering for more accurate results
+                boolean tmp = FacerecConfig.UNKNOWN_CLUSTERING_ENABLED;
+                FacerecConfig.UNKNOWN_CLUSTERING_ENABLED = false;
+                newFR = RawFileReader.openRawAsFlow( c.getCurrDataFile(), searchField.getText(), c.getDBBridge().getFaceDB() );
+                // if was enabled previously, re-enable again
+                FacerecConfig.UNKNOWN_CLUSTERING_ENABLED = tmp;
+            }
+        } catch (IOException ex) {
+            Facerec.error("Cannot open data file.");
+            return;
+        }
+        fr = newFR;
         
-        if (count == 0) {
-            searchResultLabel.setText("No occurrence found.");
+        searchSwitch = !searchSwitch;
+        if (searchSwitch) {
+            searchButton.setDisable(true);
+            clearButton.setDisable(false);
         }
         else {
-            searchResultLabel.setText("Found "+Integer.toString(count)+" occurrences.");
+            searchButton.setDisable(false);
+            clearButton.setDisable(true);
         }
+        initFlows();
+        clearCanvas();
+        drawFrames(flows, VideoWindowController.CANVAS_COLOR_UNSELECTED);
+                
     }
     
-    public void initFlows() {
+    // initialize Flows for display
+    private void initFlows() {
         vs = new VideoStatistics();
         flows = FXCollections.observableArrayList();
         for (Flow f : fr.getFlows()) {
@@ -188,11 +259,12 @@ public class VideoWindowController implements Initializable {
         passesLabel.setText("Total passes: "+Integer.toString(vs.totalOccurrences));
     }
     
-    
+    // get position in canvas based on a frame number, in order to visualize frames with people occurrences
     private int getCanvasFramePos(double frameNum) {
         return (int) ((frameNum/totalFrames)*frameBar.getWidth());
     }
     
+    // visualize occurrences on canvas
     private void drawFrames(ObservableList<ListElementFlow> flowList, Color col) {
         GraphicsContext gc = frameBar.getGraphicsContext2D();
         gc.setFill(col);
@@ -210,7 +282,11 @@ public class VideoWindowController implements Initializable {
         gc.fillRect(0, 0, frameBar.getWidth(), frameBar.getHeight());
     }
     
-    
+    /**
+     * Initializes the controller.
+     * @param url JavaFX argument
+     * @param rb JavaFX argument
+     */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         fr = Controller.getCurrentController().getVWFlowRecorder();

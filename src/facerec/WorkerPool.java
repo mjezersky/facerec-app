@@ -1,26 +1,42 @@
 
 package facerec;
 
-import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ListView;
 
-
+/**
+ * Class for connected worker handling and management.
+ * @author Matous Jezersky
+ */
 public class WorkerPool {
     
     private ObservableList<Worker> pool;
     private ListView guiElement;
+    private static final Semaphore poolAccessSem = new Semaphore(1);
     
-    WorkerPool(ListView guiElement) {
+    /**
+     * Default constructor.
+     * @param guiElement assigned list view to view workers in
+     */
+    public WorkerPool(ListView guiElement) {
         pool = FXCollections.observableArrayList();
         this.guiElement = guiElement;
     }
     
+    /**
+     * Returns a list of available workers.
+     * @return list of available workers
+     */
     public ObservableList<Worker> getWorkers() { return pool; }
     
-    
+    /**
+     * Retrieves worker by name, or null if not found.
+     * @param workerName name of the worker
+     * @return worker with provided name, or null if not found
+     */
     public Worker get(String workerName) {
         Worker w;
         for (int i=0; i<pool.size(); i++) {
@@ -32,77 +48,86 @@ public class WorkerPool {
         return null;
     }
     
+    /**
+     * Retrieves worker by index in worker pool.
+     * @param index worker index
+     * @return worker on given index
+     */
     public Worker get(int index) {
-        return pool.get(index);
+        Worker w = pool.get(index);
+        return w;
     }
     
+    /**
+     * Returns true if worker pool is empty.
+     * @return true if worker pool is empty, false otherwise
+     */
     public boolean isEmpty() { return pool.isEmpty(); }
     
     public void clear() {
+        try { poolAccessSem.acquire(); }
+        catch (InterruptedException ex) {}
         pool.clear();
         if (Facerec.GUI_ENABLED) { guiElement.setItems(pool); }
+        poolAccessSem.release();
     }
     
+    /**
+     * Adds a worker from a non-GUI thread.
+     * @param name worker name to add
+     * @param vc assigned video controller
+     */
     public void addWorkerNG(String name, VideoController vc) {
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
-                pool.add(new Worker(name, vc));
-                if (Facerec.GUI_ENABLED) { guiElement.setItems(pool); }
+                try { poolAccessSem.acquire(); }
+                catch (InterruptedException ex) {}
+                try { 
+                    if (get(name) != null ) {
+                        Facerec.info("Worker ID conflict, got multiple discovery responses for \""+name+"\".");
+                    }
+                    else {
+                        pool.add(new Worker(name, vc));
+                    }
+
+                    if (Facerec.GUI_ENABLED) { 
+                        guiElement.setItems(pool); }
+
+                    }
+                catch (Exception ex) { } // can occur when Discover button is clicked too much, ignore
+                poolAccessSem.release();
             }
         });
     }
     
+    /**
+     * Adds a worker from a GUI thread.
+     * @param name name of worker to add
+     * @param vc assigned video controller
+     */
     public void addWorker(String name, VideoController vc) {
         pool.add(new Worker(name, vc));
         if (Facerec.GUI_ENABLED) { guiElement.setItems(pool); }
     }
     
-    public void addWorker(String ip, int port) {
-        pool.add(new Worker(ip, port));
-        if (Facerec.GUI_ENABLED) { guiElement.setItems(pool); }
-    }
-    
-    public boolean isSelected() {
-        return (guiElement.getSelectionModel().selectedIndexProperty().get() != -1);
-    }
-    
-    public String getSelectedIP() {
-        int sel = guiElement.getSelectionModel().selectedIndexProperty().get();
-        
-        if (sel != -1) {
-            return pool.get(sel).ip;
-        }
-        else {
-            return null;
-        }
-    }
-    
-    public int getSelectedPort() {
-        int sel = guiElement.getSelectionModel().selectedIndexProperty().get();
-        
-        if (sel != -1) {
-            return pool.get(sel).port;
-        }
-        else {
-            return -1;
-        }
-        
-    }
-    
-    public void editSelected(String ip, int port) {
-        int sel = guiElement.getSelectionModel().selectedIndexProperty().get();
-        
-        if (sel != -1) {
-            Worker worker = pool.get(sel);
-            worker.ip = ip;
-            worker.port = port;
-            System.out.println(worker);
-            pool.set(sel, worker);
-        }        
-    }
-    
+    /**
+     * Returns first available worker.
+     * @return first worker in pool
+     */
     public Worker getDefault() {
         return pool.get(0);
+    }
+    
+    /**
+     * Prints out debug info.
+     */
+    public void printDebugInfo() {
+        System.out.print("Worker info: total "+Integer.toString(pool.size())+" /");
+        for (Worker w: pool) {
+            System.out.print(" ");
+            System.out.print(w.hasFinished());
+        }
+        System.out.print("\n");
     }
 }

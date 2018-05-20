@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane id="AnchorPane" prefHeight="600.0" prefWidth="1100.0" styleClass="mainFxmlClass" stylesheets="@../style.css" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="facerec.videowindow.VideoWindowController">
+<AnchorPane id="AnchorPane" prefHeight="600.0" prefWidth="1150.0" styleClass="mainFxmlClass" stylesheets="@../style.css" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="facerec.videowindow.VideoWindowController">
    <children>
       <Label fx:id="progressLabel" layoutX="683.0" layoutY="510.0" text="0" />
       <Canvas fx:id="frameBar" height="40.0" layoutX="20.0" layoutY="440.0" width="700.0" />
@@ -27,16 +27,22 @@
          <children>
             <Button mnemonicParsing="false" onAction="#prevFrame" prefHeight="35.0" prefWidth="120.0" text="Prev Frame" />
             <Button mnemonicParsing="false" onAction="#nextFrame" prefHeight="35.0" prefWidth="120.0" text="Next Frame" />
+            <Button mnemonicParsing="false" onAction="#saveSnapshot" prefHeight="35.0" prefWidth="120.0" text="Save Snapshot" />
          </children>
       </HBox>
-      <VBox layoutX="774.0" layoutY="48.0" prefHeight="375.0" prefWidth="151.0" spacing="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">
+      <VBox layoutX="774.0" layoutY="48.0" prefHeight="375.0" prefWidth="160.0" spacing="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">
          <children>
-            <ListView fx:id="flowList" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMousePressed="#selectFlows" prefHeight="375.0" prefWidth="298.0" />
-            <HBox prefHeight="51.0" prefWidth="448.0" spacing="10.0">
+            <Label prefHeight="18.0" prefWidth="369.0" text="Name    Time    (Frames)    (Confidence)">
+               <VBox.margin>
+                  <Insets bottom="-5.0" />
+               </VBox.margin>
+            </Label>
+            <ListView fx:id="flowList" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMousePressed="#selectFlows" prefHeight="375.0" prefWidth="360.0" />
+            <HBox prefHeight="51.0" prefWidth="448.0">
                <children>
-                  <Label fx:id="recognizedLabel" text="Recognized: 0" />
-                  <Label fx:id="unknownLabel" text="Unknown: 0" />
-                  <Label fx:id="passesLabel" text="Total passes: 0" />
+                  <Label fx:id="recognizedLabel" minWidth="120.0" text="Recognized: 0" />
+                  <Label fx:id="unknownLabel" minWidth="120.0" text="Unknown: 0" />
+                  <Label fx:id="passesLabel" minWidth="120.0" text="Total passes: 0" />
                </children>
             </HBox>
             <HBox prefHeight="35.0" prefWidth="353.0" spacing="5.0">
@@ -47,12 +53,17 @@
                   <Button maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#jumpToEnd" prefHeight="35.0" prefWidth="60.0" text="End" />
                </children>
             </HBox>
-            <TextField fx:id="searchField" prefHeight="26.0" prefWidth="200.0" promptText="Name">
+            <TextField fx:id="searchField" prefHeight="26.0" prefWidth="360.0" promptText="Name">
                <VBox.margin>
                   <Insets top="20.0" />
                </VBox.margin>
             </TextField>
-            <Button maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#search" prefHeight="35.0" prefWidth="120.0" text="Find person" />
+            <HBox prefHeight="100.0" prefWidth="200.0" spacing="5.0">
+               <children>
+                  <Button fx:id="searchButton" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#search" prefHeight="35.0" prefWidth="120.0" text="Find Person" />
+                  <Button fx:id="clearButton" disable="true" mnemonicParsing="false" onAction="#search" prefHeight="35.0" prefWidth="120.0" text="Clear Filter" />
+               </children>
+            </HBox>
             <Label fx:id="searchResultLabel" prefHeight="18.0" prefWidth="200.0" />
          </children>
       </VBox>

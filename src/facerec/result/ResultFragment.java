@@ -1,13 +1,21 @@
 
 package facerec.result;
 
-
+/**
+ * Class representing a single detection in a frame.
+ * @author Matous Jezersky
+ */
 public class ResultFragment {
     public String name;
     public String rectString;
     public double confidence;
     public String features;
     
+    /**
+     * Parses a result fragment from a string.
+     * @param strFragment string representation of the fragment
+     * @return ResultFragment object
+     */
     public static ResultFragment parseResultFragment(String strFragment) {
         ResultFragment fmt = new ResultFragment();
         
@@ -27,6 +35,10 @@ public class ResultFragment {
         return fmt;
     }
     
+    /**
+     * Returns a string representation of this object.
+     * @return string representation of this object
+     */
     @Override
     public String toString() {
         String res = "";
